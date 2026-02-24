@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <!-- Back button -->
+        <div class="mb-3">
+            <a href="{% url 'index' %}" class="btn btn-secondary btn-sm">
+                ← Back
+            </a>
+        </div>
+        
+        <!-- Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3 id="totalFrames">{{ video.total_frames }}</h3>
+                    <p>Total Frames</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3 id="accidentFrames">{{ video.accident_frames }}</h3>
+                    <p>Accidents Found</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3 id="detectionRate">{{ video.detection_percentage|floatformat:1 }}%</h3>
+                    <p>Detection Rate</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3>
+                        <span class="badge badge-{{ video.status }}">
+                            {{ video.get_status_display }}
+                        </span>
+                    </h3>
+                    <p>Status</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Processing view -->
+        {% if video.status == 'processing' %}
+        <div class="card mb-4">
+            <div class="card-header">
+                Processing Video...
+            </div>
+            <div class="card-body">
+                <!-- Live preview -->
+                <div class="mb-3">
+                    <img id="liveFrame" src="" class="w-100" style="border-radius: 6px; background: #000; min-height: 400px;">
+                </div>
+                
+                <!-- Progress -->
+                <div class="progress mb-2">
+                    <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                </div>
+                <p class="text-muted mb-0">
+                    Frame <span id="currentFrame">0</span> of <span id="totalFramesPreview">0</span>
+                    • <span id="processingSpeed">0</span> FPS
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Failed -->
+        {% if video.status == 'failed' %}
+        <div class="alert alert-danger">
+            <strong>Processing Failed</strong><br>
+            {{ video.error_message }}
+        </div>
+        {% endif %}
+        
+        <!-- Completed -->
+        {% if video.status == 'completed' %}
+        <div class="alert alert-success mb-4">
+            <strong>Processing Complete!</strong> Took {{ video.processing_time|floatformat:2 }} seconds
+        </div>
+        
+        <!-- Videos -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Original Video</div>
+                    <div class="card-body">
+                        <video controls class="w-100">
+                            <source src="{{ video.video_file.url }}" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">With Detections</div>
+                    <div class="card-body">
+                        <video controls class="w-100">
+                            <source src="{{ video.output_video.url }}" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info -->
+        <div class="card">
+            <div class="card-header">Detection Info</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Uploaded:</strong> {{ video.uploaded_at|date:"M d, Y H:i" }}</p>
+                        <p><strong>Processed:</strong> {{ video.processed_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Confidence:</strong> {{ video.confidence_threshold }}</p>
+                        <p><strong>Smoothing:</strong> {{ video.smoothing_frames }} frames</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="mt-3">
+            <a href="{{ video.output_video.url }}" download class="btn btn-primary">
+                Download Result
+            </a>
+            <a href="{% url 'delete_video' video.id %}" class="btn btn-secondary" onclick="return confirm('Delete this video?')">
+                Delete
+            </a>
+        </div>
+        {% endif %}
+        
+        <!-- Pending -->
+        {% if video.status == 'pending' %}
+        <div class="alert alert-info">
+            <strong>Queued for processing...</strong><br>
+            Your video will start processing shortly.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if video.status == 'processing' or video.status == 'pending' %}
+<script>
+let isProcessing = true;
+
+function fetchLiveFrame() {
+    if (!isProcessing) return;
+    
+    fetch('{% url "get_processing_frame" video.id %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.frame) {
+                document.getElementById('liveFrame').src = 'data:image/jpeg;base64,' + data.frame;
+                
+                if (data.stats) {
+                    const stats = data.stats;
+                    
+                    if (stats.progress) {
+                        document.getElementById('progressBar').style.width = Math.round(stats.progress) + '%';
+                    }
+                    
+                    if (stats.current_frame) {
+                        document.getElementById('currentFrame').textContent = stats.current_frame;
+                    }
+                    if (stats.total_frames) {
+                        document.getElementById('totalFrames').textContent = stats.total_frames;
+                        document.getElementById('totalFramesPreview').textContent = stats.total_frames;
+                    }
+                    if (stats.accident_frames !== undefined) {
+                        document.getElementById('accidentFrames').textContent = stats.accident_frames;
+                    }
+                    if (stats.fps) {
+                        document.getElementById('processingSpeed').textContent = stats.fps.toFixed(1);
+                    }
+                    
+                    if (stats.status === 'completed' || stats.status === 'failed') {
+                        isProcessing = false;
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function checkStatus() {
+    fetch('{% url "video_status" video.id %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.detection_rate) {
+                document.getElementById('detectionRate').textContent = data.detection_rate.toFixed(1) + '%';
+            }
+            
+            if (data.status === 'completed' || data.status === 'failed') {
+                isProcessing = false;
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+setInterval(fetchLiveFrame, 500);
+setInterval(checkStatus, 2000);
+
+fetchLiveFrame();
+checkStatus();
+</script>
+{% endif %}
+{% endblock %}

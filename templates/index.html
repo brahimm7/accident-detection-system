@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-header">
+                Upload Video for Detection
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'upload_video' %}" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <!-- Upload Area -->
+                    <div class="upload-box mb-4" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h5>Drop your video here</h5>
+                        <p style="color: #999;">or click to browse</p>
+                        <input type="file" name="video" id="videoInput" accept="video/*" required style="display: none;">
+                        <button type="button" class="btn btn-primary mt-2" onclick="document.getElementById('videoInput').click()">
+                            Choose File
+                        </button>
+                    </div>
+                    
+                    <!-- File preview -->
+                    <div id="filePreview" style="display: none;" class="alert alert-info mb-4">
+                        <strong>Selected:</strong> <span id="fileName"></span>
+                    </div>
+                    
+                    <!-- Settings -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Detection Sensitivity</label>
+                            <input type="range" class="form-range" name="confidence" id="confidence" min="0.1" max="0.9" step="0.1" value="0.5">
+                            <small class="text-muted">Current: <strong id="confidenceValue">0.5</strong></small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Smoothing</label>
+                            <input type="number" class="form-control" name="smoothing" value="15" min="5" max="60">
+                            <small class="text-muted">Frames to maintain detection</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>
+                        Start Detection
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Recent Videos -->
+        {% if videos %}
+        <div class="card mt-4">
+            <div class="card-header">
+                Recent Uploads
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Results</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for video in videos %}
+                        <tr style="cursor: pointer;" onclick="window.location.href='{% url 'video_detail' video.id %}'">
+                            <td>#{{ video.id }}</td>
+                            <td>
+                                <span class="badge badge-{{ video.status }}">
+                                    {{ video.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ video.uploaded_at|date:"M d, H:i" }}</td>
+                            <td>
+                                {% if video.status == 'completed' %}
+                                    {{ video.accident_frames }} accidents
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// File input
+document.getElementById('videoInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('filePreview').style.display = 'block';
+        document.getElementById('submitBtn').disabled = false;
+    }
+});
+
+// Confidence slider
+document.getElementById('confidence').addEventListener('input', function(e) {
+    document.getElementById('confidenceValue').textContent = e.target.value;
+});
+
+// Drag and drop
+const uploadArea = document.getElementById('uploadArea');
+const videoInput = document.getElementById('videoInput');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+});
+
+['dragenter', 'dragover'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => {
+        uploadArea.style.borderColor = '#d32f2f';
+    });
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => {
+        uploadArea.style.borderColor = '#ccc';
+    });
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        videoInput.files = files;
+        videoInput.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

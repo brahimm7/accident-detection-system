@@ -1,0 +1,23 @@
+# .gitkeep Files
+
+These empty files ensure that Git tracks these important directories even when they're empty.
+
+Create these files:
+
+1. media/uploads/.gitkeep
+2. media/outputs/.gitkeep
+3. models/.gitkeep
+
+Commands to create them:
+
+```bash
+# Windows
+type nul > media\uploads\.gitkeep
+type nul > media\outputs\.gitkeep
+type nul > models\.gitkeep
+
+# macOS/Linux
+touch media/uploads/.gitkeep
+touch media/outputs/.gitkeep
+touch models/.gitkeep
+```

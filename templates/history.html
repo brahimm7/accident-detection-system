@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                Processing History
+            </div>
+            <div class="card-body">
+                {% if videos %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Frames</th>
+                            <th>Accidents</th>
+                            <th>Rate</th>
+                            <th>Time</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for video in videos %}
+                        <tr>
+                            <td><strong>#{{ video.id }}</strong></td>
+                            <td>
+                                <span class="badge badge-{{ video.status }}">
+                                    {{ video.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ video.uploaded_at|date:"M d, H:i" }}</td>
+                            <td>{{ video.total_frames }}</td>
+                            <td>{{ video.accident_frames }}</td>
+                            <td>
+                                {% if video.status == 'completed' %}
+                                    {{ video.detection_percentage|floatformat:1 }}%
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if video.processing_time > 0 %}
+                                    {{ video.processing_time|floatformat:1 }}s
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'video_detail' video.id %}" class="btn btn-primary btn-sm">
+                                    View
+                                </a>
+                                <a href="{% url 'delete_video' video.id %}" class="btn btn-secondary btn-sm" onclick="return confirm('Delete?')">
+                                    Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="text-muted">No videos yet</p>
+                    <a href="{% url 'index' %}" class="btn btn-primary">Upload Your First Video</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
