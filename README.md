@@ -126,7 +126,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Project Link: [https://github.com/yourusername/accident-detection-system](https://github.com/brahimm7/accident-detection-system)
+Project Link: [https://github.com/brahimm7/accident-detection-system](https://github.com/brahimm7/accident-detection-system)
 
 ---
 
