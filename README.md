@@ -35,7 +35,7 @@ A Django-based web application that uses YOLOv8 to detect car accidents in video
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/accident-detection-system.git
+git clone https://github.com/brahimm7/accident-detection-system.git
 cd accident-detection-system
 ```
 
