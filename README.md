@@ -124,10 +124,5 @@ accident-detection-system/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contact
-
-Project Link: [https://github.com/brahimm7/accident-detection-system](https://github.com/brahimm7/accident-detection-system)
-
----
 
 Made for road safety
